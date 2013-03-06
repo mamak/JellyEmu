@@ -15,6 +15,8 @@ public class Jelly {
     public static long start;
 
     public static Commands.Console _console;
+
+    public static boolean running = true;
     
     public static void main(String[] args) {
         start=System.currentTimeMillis();
