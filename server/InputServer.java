@@ -2,6 +2,7 @@ package server;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -44,10 +45,20 @@ public abstract class InputServer implements Runnable {
                     SelectionKey key = iterator.next();
                     iterator.remove();
 
-                    if(!key.isValid()){
-                        continue;
-                    }else if(key.isAcceptable()){
-                        accept();
+                    try{
+                        if(!key.isValid()){
+                            continue;
+                        }else if(key.isAcceptable()){
+                            accept();
+                        }else if(key.isReadable()){
+                            read(key);
+                        }
+                    }catch(IOException e){
+                        if(key.channel() instanceof SocketChannel){
+                            close(key);
+                        }else{
+                            //shutdown
+                        }
                     }
                 }
             } catch (IOException ex) {}
@@ -61,5 +72,28 @@ public abstract class InputServer implements Runnable {
         onConnectAction(key);
     }
 
+    private void read(SelectionKey key) throws IOException{
+        SocketChannel sock = (SocketChannel)key.channel();
+        ByteBuffer buffer = ByteBuffer.allocate(32);
+
+        int state = sock.read(buffer);
+
+        if(state==-1){
+            close(key);
+            return;
+        }
+
+        String packet = new String(buffer.array());
+        onReadAction(key, packet);
+    }
+
+    private void close(SelectionKey key) throws IOException{
+        onCloseAction(key);
+        ((SocketChannel)key.channel()).close();
+        key.cancel();
+    }
+
+    protected abstract void onReadAction(SelectionKey key, String packet);
     protected abstract void onConnectAction(SelectionKey key);
+    protected abstract void onCloseAction(SelectionKey key);
 }
