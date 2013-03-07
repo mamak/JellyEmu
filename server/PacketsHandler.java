@@ -1,18 +1,15 @@
 package server;
 
 import java.nio.channels.SelectionKey;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Queue;
+import java.util.concurrent.SynchronousQueue;
 import jelly.Jelly;
 
 public class PacketsHandler implements Runnable {
     public static final PacketsHandler instance = new PacketsHandler();
     private Thread t;
 
-    private final HashMap<SelectionKey, String> pendingPackets = new HashMap<>();
+    private final Queue<PacketData> pendingPackets = new SynchronousQueue<>();
 
     private PacketsHandler(){
         t = new Thread(this);
@@ -27,7 +24,7 @@ public class PacketsHandler implements Runnable {
                 if(packet.trim().isEmpty()){
                     continue;
                 }else{
-                    pendingPackets.put(key, packet.trim());
+                    pendingPackets.add(new PacketData(key, packet));
                 }
             }
 
@@ -44,18 +41,15 @@ public class PacketsHandler implements Runnable {
                         pendingPackets.wait();
                     } catch (InterruptedException ex) {}
                 }
-
-                Iterator<Entry<SelectionKey, String>> iterator = pendingPackets.entrySet().iterator();
-
-                while(iterator.hasNext()){
-                    Entry ent = iterator.next();
-                    iterator.remove();
-
-                    processPacket((SelectionKey)ent.getKey(), (String)ent.getValue());
-                }
-
-                pendingPackets.clear();
             }
+
+            PacketData packet;
+
+            synchronized(pendingPackets){
+                packet = pendingPackets.poll();
+            }
+
+            processPacket(packet.key, packet.packet);
         }
     }
 
@@ -64,6 +58,16 @@ public class PacketsHandler implements Runnable {
             //accounts
             case 'A':
                 break;
+        }
+    }
+
+    private class PacketData{
+        public SelectionKey key;
+        public String packet;
+
+        public PacketData(SelectionKey key, String packet){
+            this.key=key;
+            this.packet=packet;
         }
     }
 }

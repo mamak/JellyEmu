@@ -4,12 +4,12 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Queue;
+import java.util.concurrent.SynchronousQueue;
 import jelly.Jelly;
 
 public class OutputServer extends Thread {
-    private final ArrayList<Request> pendingList = new ArrayList<>();
+    private final Queue<Request> pendingList = new SynchronousQueue<>();
 
     public void send(SelectionKey key, String packet){
         packet+=(char)0x00;
@@ -29,20 +29,15 @@ public class OutputServer extends Thread {
                         pendingList.wait();
                     } catch (InterruptedException ex) {}
                 }
-
-                Iterator<Request> iterator = pendingList.iterator();
-
-                while(iterator.hasNext()){
-                    Request req = iterator.next();
-                    iterator.remove();
-
-                    try {
-                        write(req.key, req.getBytes());
-                    } catch (IOException ex) {}
-                }
-
-                pendingList.clear();
             }
+
+            Request req;
+            synchronized(pendingList){
+                req = pendingList.poll();
+            }
+            try {
+                write(req.key, req.getBytes());
+            } catch (IOException ex) {}
         }
     }
 
