@@ -7,6 +7,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.HashMap;
 import java.util.Iterator;
 import jelly.Jelly;
 
@@ -15,6 +16,8 @@ public abstract class InputServer implements Runnable {
     protected Selector selector;
     protected Thread t;
     public final OutputServer _out = new OutputServer();
+
+    protected final HashMap<SelectionKey, String> uncompletePackets = new HashMap<>();
 
     public InputServer(int port){
         try {
@@ -84,7 +87,24 @@ public abstract class InputServer implements Runnable {
         }
 
         String packet = new String(buffer.array());
-        onReadAction(key, packet);
+        String lastUncompletePacket = uncompletePackets.get(key);
+
+        if(lastUncompletePacket!=null){
+            packet = lastUncompletePacket + packet;
+        }
+
+        if(isCompletePacket(packet)){
+            uncompletePackets.remove(key);
+            onReadAction(key, packet);
+        }else{
+            uncompletePackets.put(key, packet);
+        }
+    }
+
+    private boolean isCompletePacket(String packet){
+        char last = packet.charAt(packet.length()-1);
+
+        return last == '\u0000' || last == '\n' || last == '\r';
     }
 
     private void close(SelectionKey key) throws IOException{
