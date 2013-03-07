@@ -21,7 +21,8 @@ public class Jelly {
     public static void main(String[] args) {
         start=System.currentTimeMillis();
         System.out.println("======================================================");
-        System.out.println("\t\tJelly-emu by v4vx");
+        printAsciiLogo();
+        System.out.println("\t\t\tJelly-emu by v4vx");
         System.out.println("Version 0.1");
         System.out.println("======================================================");
         _config=new Config();
@@ -38,6 +39,19 @@ public class Jelly {
 
         _console = new Commands.Console();
         _console.start();
+    }
+
+    private static void printAsciiLogo(){
+        System.out.println(
+                "   ___      _ _       _____\n" +
+                "  |_  |    | | |     |  ___|\n" +
+                "    | | ___| | |_   _| |__ _ __ ___  _   _\n" +
+                "    | |/ _ \\ | | | | |  __| '_ ` _ \\| | | |\n" +
+                "/\\__/ /  __/ | | |_| | |__| | | | | | |_| |\n" +
+                "\\____/ \\___|_|_|\\__, \\____/_| |_| |_|\\__,_|\n" +
+                "                 __/ |\n" +
+                "                |___/\n"
+        );
     }
     
     public static void turnoff(){
