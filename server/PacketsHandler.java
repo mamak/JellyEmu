@@ -57,8 +57,13 @@ public class PacketsHandler implements Runnable {
         switch(packet.charAt(0)){
             //accounts
             case 'A':
+                processAccountPacket(key, packet);
                 break;
         }
+    }
+
+    private void processAccountPacket(SelectionKey key, String packet){
+        
     }
 
     private class PacketData{

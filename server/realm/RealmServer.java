@@ -2,9 +2,9 @@ package server.realm;
 
 import java.nio.channels.SelectionKey;
 import jelly.Jelly;
-import server.InputServer;
+import server.InputThread;
 
-public class RealmServer extends InputServer {
+public class RealmServer extends InputThread {
     private int count = 0;
 
     public RealmServer(){
