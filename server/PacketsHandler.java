@@ -1,77 +1,63 @@
 package server;
 
-import java.nio.channels.SelectionKey;
-import java.util.Queue;
-import java.util.concurrent.SynchronousQueue;
+import core.utils.PendingList;
 import jelly.Jelly;
 
 public class PacketsHandler implements Runnable {
     public static final PacketsHandler instance = new PacketsHandler();
     private Thread t;
 
-    private final Queue<PacketData> pendingPackets = new SynchronousQueue<>();
+    private final PendingList<PacketData> pendingPackets = new PendingList<>();
 
     private PacketsHandler(){
         t = new Thread(this);
         t.start();
     }
 
-    public void add(SelectionKey key, String packetData){
-        synchronized(pendingPackets){
-            String[] packets = packetData.split("\n|\u0000|\r");
+    public void add(Client client, String packetData){
+        String[] packets = packetData.split("\n|\u0000|\r");
 
-            for(String packet : packets){
-                if(packet.trim().isEmpty()){
-                    continue;
-                }else{
-                    pendingPackets.add(new PacketData(key, packet));
-                }
+        for(String packet : packets){
+            if(packet.trim().isEmpty()){
+                continue;
+            }else{
+                pendingPackets.push(new PacketData(client, packet));
             }
-
-            pendingPackets.notify();
         }
     }
 
     @Override
     public void run(){
         while(Jelly.running && !t.isInterrupted()){
-            synchronized(pendingPackets){
-                while(pendingPackets.isEmpty()){
-                    try {
-                        pendingPackets.wait();
-                    } catch (InterruptedException ex) {}
-                }
-            }
+            try {
+                pendingPackets.waitForElements();
+            } catch (InterruptedException ex) {}
 
-            PacketData packet;
+            PacketData packet = pendingPackets.pop();
 
-            synchronized(pendingPackets){
-                packet = pendingPackets.poll();
-            }
-
-            processPacket(packet.key, packet.packet);
+            processPacket(packet.client, packet.packet);
         }
     }
 
-    private void processPacket(SelectionKey key, String packet){
+    private void processPacket(Client client, String packet){
         switch(packet.charAt(0)){
             //accounts
             case 'A':
-                processAccountPacket(key, packet);
+                processAccountPacket(client, packet);
                 break;
         }
     }
 
-    private void processAccountPacket(SelectionKey key, String packet){
+    private void processAccountPacket(Client client, String packet){
         
     }
 
     private class PacketData{
-        public SelectionKey key;
+        public Client client;
         public String packet;
 
-        public PacketData(SelectionKey key, String packet){
-            this.key=key;
+        public PacketData(Client client, String packet){
+            this.client=client;
             this.packet=packet;
         }
     }

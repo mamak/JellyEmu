@@ -1,47 +1,20 @@
 package core;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import server.InputThread;
 
-public class Session {
-    private SelectionKey key;
+public class Session extends server.Client {
     private boolean login = false;
-    private SocketChannel sock;
 
-    public Session(SelectionKey key){
-        this.key = key;
-        sock = (SocketChannel)key.channel();
+    public Session(SelectionKey key, InputThread server){
+        super(key, server);
     }
 
-    public void send(String packet) throws IOException{
-        packet+=(char)0x00;
-        sock.write(ByteBuffer.wrap(packet.getBytes()));
-    }
-
-    public void logout(boolean socket){
-        if(socket){
-            try {
-                sock.close();
-                key.cancel();
-            } catch (IOException ex) {
-                Logger.getLogger(Session.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-    }
-
-    public SelectionKey getKey(){
-        return key;
+    public void logout(){
+        login = false;
     }
 
     public boolean isLogin(){
         return login;
-    }
-
-    public SocketChannel getSocket(){
-        return sock;
     }
 }

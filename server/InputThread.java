@@ -107,7 +107,7 @@ public abstract class InputThread implements Runnable {
         return last == '\u0000' || last == '\n' || last == '\r';
     }
 
-    private void close(SelectionKey key) throws IOException{
+    public void close(SelectionKey key) throws IOException{
         onCloseAction(key);
         ((SocketChannel)key.channel()).close();
         key.cancel();
