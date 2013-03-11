@@ -95,7 +95,9 @@ public abstract class InputThread implements Runnable {
 
         if(isCompletePacket(packet)){
             uncompletePackets.remove(key);
-            onReadAction(key, packet);
+            for(String c_packet : packet.split("\n|\r|\u0000")){
+                onReadAction(key, c_packet);
+            }
         }else{
             uncompletePackets.put(key, packet);
         }
